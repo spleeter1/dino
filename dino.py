@@ -23,13 +23,18 @@ score, hscore = 0, 0
 background_x, background_y = 0, 0
 tree_x, tree_y = 550, 230
 dino_x, dino_y = 0, 210
-x_def = 5
+speed = 5  # tốc độ ban đầu
 y_def = 6  # tốc độ rơi của dino
 jump = False
 jump_count = 0
 max_jumps = 2
 lives = 3
-gameplay = True
+gameplay = False
+menu = True
+
+# Difficulty levels
+easy_speed = 3
+hard_speed = 7
 
 # Tạo heart
 heart_x, heart_y = None, None
@@ -84,7 +89,7 @@ def reset_tree():
     tree_x = 550
 
 def reset_game():
-    global background_x, background_y, tree_x, tree_y, dino_x, dino_y, score, lives, gameplay, heart_x, heart_y, heart_visible
+    global background_x, background_y, tree_x, tree_y, dino_x, dino_y, score, lives, gameplay, heart_x, heart_y, heart_visible, speed, menu
     background_x, background_y = 0, 0
     tree_x, tree_y = 550, 230
     dino_x, dino_y = 0, 210
@@ -92,7 +97,9 @@ def reset_game():
     lives = 3
     heart_x, heart_y = None, None
     heart_visible = False
-    gameplay = True
+    gameplay = False
+    menu = True
+    speed = 5  # Đặt lại tốc độ ban đầu
 
 # Vòng lặp xử lý game
 running = True
@@ -103,25 +110,45 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
+            if menu:
+                if event.key == pygame.K_1:  # Easy mode
+                    speed = easy_speed
+                    gameplay = True
+                    menu = False
+                if event.key == pygame.K_2:  # Hard mode
+                    speed = hard_speed
+                    gameplay = True
+                    menu = False
             if event.key == pygame.K_SPACE and gameplay:
                 if jump_count < max_jumps:
                     jump = True
                     jump_count += 1
-            if event.key == pygame.K_SPACE and not gameplay:
+            if event.key == pygame.K_SPACE and not gameplay and not menu:
                 reset_game()
 
-    if gameplay:
+    if menu:
+        screen.fill((255, 255, 255))
+        title_txt = game_font.render('Dino Game', True, (0, 0, 0))
+        screen.blit(title_txt, (250, 50))
+        easy_txt = game_font.render('Press 1 for Easy', True, (0, 0, 0))
+        screen.blit(easy_txt, (200, 150))
+        hard_txt = game_font.render('Press 2 for Hard', True, (0, 0, 0))
+        screen.blit(hard_txt, (200, 200))
+    elif gameplay:
         # Background
         background_hcn = screen.blit(background, (background_x, background_y))
         background2_hcn = screen.blit(background, (background_x + 600, background_y))
-        background_x -= x_def
-        if background_x == -600:
+        background_x -= speed
+        if background_x <= -600:
             background_x = 0
+            speed += 0.5  # Tăng dần tốc độ sau mỗi vòng lặp
+
         # Tree
         tree_hcn = screen.blit(tree, (tree_x, tree_y))
-        tree_x -= x_def
-        if tree_x == -20:
+        tree_x -= speed
+        if tree_x <= -20:
             tree_x = 550
+
         # Dino
         dino_hcn = screen.blit(dino, (dino_x, dino_y))
         if dino_y >= 80 and jump:
@@ -131,22 +158,27 @@ while running:
         if dino_y < 210 and not jump:
             dino_y += y_def
         if dino_y == 210:
-            jump_count = 0  # Reset jump count when dino touches the ground
+            jump_count = 0
+
         # Hearts
         appear_heart()
         check_heart_collision()
         if heart_visible:
             screen.blit(heart, (heart_x, heart_y))
-            heart_x -= x_def
+            heart_x -= speed
             if heart_x < -20:
                 heart_visible = False
+
         score += 0.01
         if hscore < score:
             hscore = score
+
         if not checkvc():
             reset_tree()
+
         if lives == 0:
             gameplay = False
+
         score_view()
     else:
         # Reset game
@@ -154,4 +186,5 @@ while running:
         tree_hcn = screen.blit(tree, (tree_x, tree_y))
         dino_hcn = screen.blit(dino, (dino_x, dino_y))
         score_view()
+
     pygame.display.update()
